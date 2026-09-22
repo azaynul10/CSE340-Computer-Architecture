@@ -8,6 +8,8 @@ Faculty slides, exam papers, and the textbook are **not** redistributed — see 
 > **Textbook:** Patterson & Hennessy, *Computer Organization and Design — RISC-V Edition* (2nd ed.)
 > **Scope:** Ch1 Performance · Ch2 RISC-V ISA · Ch3 Arithmetic & IEEE 754 · Ch4 Datapath, Control & Pipelining · Ch5 Memory Hierarchy
 
+**Read the study guide online:** https://azaynul10.github.io/CSE340-Computer-Architecture/
+
 ---
 
 ## Repository structure
@@ -99,10 +101,10 @@ real-time storm alerting, BLE sync and an on-device display on a 100 mAh/day bud
 ## Quick start
 
 ```bash
-git clone https://github.com/<your-username>/CSE340-Computer-Architecture.git
+git clone https://github.com/azaynul10/CSE340-Computer-Architecture.git
 cd CSE340-Computer-Architecture
 
-# Render the study guide to HTML (writes study-guide/CSE340_Final_Plan.html and opens it)
+# Render the study guide to HTML (writes study-guide/CSE340_Study_Guide.html; add --open to launch it)
 python study-guide/plan_html.py
 
 # Track tasks from the terminal
