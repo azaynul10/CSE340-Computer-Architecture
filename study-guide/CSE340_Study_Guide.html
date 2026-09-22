@@ -1,0 +1,441 @@
+<!doctype html><html><head><meta charset='utf-8'><title>CSE340 Study Guide</title><style>
+body{font-family:Segoe UI,system-ui,sans-serif;max-width:1000px;margin:24px auto;padding:0 16px;line-height:1.45;color:#1c1c1c;background:#fafafa}
+h1{border-bottom:3px solid #1e5aa8;padding-bottom:6px}
+h2{margin-top:36px;background:#1e5aa8;color:#fff;padding:6px 12px;border-radius:6px}
+ul{list-style:none;padding-left:0}
+ul ul{padding-left:28px;list-style:disc}
+ul ul li{margin:2px 0}
+li.task{margin:8px 0;padding:6px 10px;border-left:4px solid #1e5aa8;background:#fff;border-radius:4px}
+li.task.done{border-left-color:#3a9a3a;background:#eef7ee;color:#666}
+li.task.done>.label{text-decoration:line-through}
+li.task .box{display:inline-block;width:1.1em;font-weight:bold;color:#1e5aa8}
+li.task.done .box{color:#3a9a3a}
+code{background:#eef1f6;padding:1px 5px;border-radius:3px;font-size:.92em}
+table{border-collapse:collapse;width:100%;margin:12px 0;background:#fff}
+th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#e6edf7}
+table.wide td,table.wide th{padding:2px 4px;font-size:.8em;text-align:center;white-space:nowrap}
+table.wide td:nth-child(2){text-align:left}
+pre{background:#eef1f6;padding:10px 14px;border-radius:6px;overflow-x:auto}
+del{color:#999}
+hr{border:0;border-top:1px solid #ccc;margin:28px 0}
+p.meta{color:#666;font-size:.9em}
+@media print{body{max-width:none;margin:0} h2{background:none;color:#000;border-bottom:2px solid #000;border-radius:0} li.task{background:none}}
+</style></head><body><h1>CSE340 Final — Study Guide &amp; Worked Solutions</h1>
+<p><strong>Exam format (recent semesters):</strong> 4 questions · 50 marks scaled to 40 · ~110 minutes → budget <strong>≈ 2 minutes per mark</strong>. Bring a calculator, pencil, eraser, sharpener, pen, water, ID.</p>
+<p><strong>Where the marks are (typical final):</strong> Ch4 datapath + pipelining ≈ 25 · Ch2 RISC-V ISA ≈ 11 · Ch3 arithmetic ≈ 7–18 · Ch5 memory hierarchy ≈ 6–7. Prepare in that order.</p>
+<p><strong>The one rule:</strong> pen in hand for every lecture video. Draw, don't watch. Every 90-minute block should end with something you produced from a blank page.</p>
+<p>Tick <code>[x]</code> in the checklist at the bottom as you go — <code>python tracker.py list</code> shows progress, <code>python plan_html.py</code> renders this file to HTML.</p>
+<hr>
+<h2>Last look before the hall (read twice, 5 min)</h2>
+<p><strong>Order of attack:</strong> the chapter you are surest of first (bank the marks) → the Ch4 question (most marks, most time) → Ch2 → Ch5. If stuck for more than 3 minutes, move on and come back.</p>
+<p><strong>Datapath:</strong> 9 boxes first (PC · Instr Mem · Registers · Imm Gen · ALU · Data Mem · Add+4 · Shift-left-1 · Add branch), 3 MUXes (ALUSrc, MemtoReg, PCSrc), then wire R-type → add <code>ld</code> → add <code>sd</code> → add <code>beq</code>. Label every bit range ([6:0] Control, [19:15] rs1, [24:20] rs2, [11:7] rd, [31:0] Imm Gen, [30,14:12] ALU control). For a code snippet: only the instruction types present.</p>
+<p><strong>Control signals — 5 questions:</strong> immediate as ALU input B? → ALUSrc · writes rd? → RegWrite · value from memory? → MemtoReg · touches memory? → MemRead/MemWrite · branch? → Branch. ALUOp 00 add / 01 sub / 10 funct. X when RegWrite = 0.</p>
+<p><strong>Hazards:</strong> source register → look <em>up</em> for the nearest writer → distance 1–2 = hazard, ≥3 safe. Stall-only: adjacent 2, distance-2 → 1, recheck after inserting stalls. Forwarding: ALU 0, load-use 1. Total = last WB cycle; CPI = cycles / instructions. Single-cycle = 0 hazards, CPI 1.</p>
+<p><strong>Clock:</strong> single-cycle = sum of stages; pipelined = slowest stage; n instructions = (n + 4 + stalls) × T.</p>
+<p><strong>Imm Gen needs the whole instruction:</strong> imm bits sit in different places for I (31:20), S (31:25 + 11:7), SB (scrambled) → must read the opcode, then sign-extend from bit 31.</p>
+<p><strong>Decode:</strong> hex → binary → opcode [6:0] → format → rd [11:7], funct3 [14:12], rs1 [19:15], rs2/imm. <code>0x00CB1A93</code> = <code>slli x21, x22, 12</code>.</p>
+<p><strong>Ch2 traps:</strong> <code>lw</code> offset is bytes, add in hex (0x1232 + 8 = 0x123A); loads the <em>value at</em> the address; carry x3 forward. Arrays: index × 8 (<code>slli 3</code>) for doublewords, × 4 for words. Invert the C condition to branch past the body. FP: <code>flw</code>/<code>fsw</code>, <code>.s</code> suffix, 4-byte offsets.</p>
+<p><strong>Cache:</strong> offset bits = log₂(block bytes), index bits = log₂(#blocks), tag = rest. 328 / 8 B / 32 B → tag 10, index 1, offset 0. Hierarchy = locality (temporal + spatial). Big blocks: lower miss <em>rate</em>, higher miss <em>penalty</em>, more conflicts. Write-through = every write to memory + write buffer; write-back = dirty bit, write on eviction. AMAT = hit time + miss rate × penalty.</p>
+<p><strong>In the hall:</strong> read every hint printed on the paper. Pencil for diagrams. Label before wiring.</p>
+<hr>
+<h2>Syllabus → what to practise</h2>
+<table>
+<tr><th>Chapter</th><th>Final syllabus</th><th>Practise</th><th>Check against</th></tr>
+<tr><td>Ch2</td><td>Instruction formats, encode/decode, C → assembly, addressing</td><td>Practice Sheet 2: Q1–4 (coding), Q8–9 (encode SB-type), Q10 (LUI + ADDI), Q12 (asm → C)</td><td>Faculty's Quiz 2 solve — a fully worked decode; copy its layout</td></tr>
+<tr><td>Ch3</td><td>IEEE 754, FP add/multiply, integer multiply/divide</td><td>Assignment 3 Q1–4 · Practice Sheet 3</td><td><code>notes/ch3-arithmetic-worked-answers.pdf</code></td></tr>
+<tr><td>Ch4</td><td>Single-cycle datapath, control, pipelining, hazards</td><td>Practice Sheet 4: Q4–15 — every one, by hand</td><td><code>notes/ch4-datapath-pipelining-notes.pdf</code>, <code>notes/datapaths-reference.pdf</code></td></tr>
+<tr><td>Ch5</td><td>Memory hierarchy, direct-mapped cache, write policies</td><td>Practice Sheet 5</td><td>PBK Ch5 handout (faculty explicitly say "read the handouts too")</td></tr>
+<tr><td>Past papers</td><td>—</td><td>Mock Final, timed, in one sitting</td><td>Compare against the worked solutions below</td></tr>
+</table>
+<p><strong>Question formats announced → where they come from</strong></p>
+<ul>
+<li><strong>Datapath drawing</strong> → Practice Sheet 4 Q5–12 (single instruction → two-instruction combined → BEQ→BNE modification → full datapath). A past final asked "design a datapath for BNE" = PS4 Q11 exactly.</li>
+<li><strong>Coding</strong> → Practice Sheet 2 Q1–6 + FP code (Euclidean distance below).</li>
+<li><strong>Mathematical</strong> → Ch3 conversions/arithmetic · Ch4 clock period + CPI · Ch5 tag/index/offset + AMAT.</li>
+<li><strong>Analytical</strong> → PS4 Q13 (AND→XNOR bug), stuck-at control signals, why Imm Gen takes the whole instruction.</li>
+<li><strong>Scenario-based justification</strong> → which FP format for a given precision, block-size trade-off, role of the offset.</li>
+<li><strong>True/False</strong> → all chapters; <strong>always write one reason line</strong>, a bare T/F scores nothing.</li>
+</ul>
+<p><strong>Using the lecture playlists</strong> (links in <code>resources.md</code>)</p>
+<ul>
+<li>Ch4: watch the full playlist once, then never again — every further mark comes from drawing. Lecture 16 (the full single-cycle datapath, P&amp;H Fig 4.17) is the one to redraw from.</li>
+<li>Ch2: skip the basics if you passed the midterm; go straight to the format/encoding lectures, then Practice Sheet 2.</li>
+<li>Ch5: the tag/index/offset lecture is the essential one; the simulation lectures can be skipped.</li>
+<li>Ch3: problems only; the videos add little over the handout once you can do one conversion end to end.</li>
+</ul>
+<hr>
+<h2>Control-signal table (P&amp;H Fig 4.22 — the slides only have it as a picture)</h2>
+<table>
+<tr><th>Instr</th><th>ALUSrc</th><th>MemtoReg</th><th>RegWrite</th><th>MemRead</th><th>MemWrite</th><th>Branch</th><th>ALUOp</th></tr>
+<tr><td>R-type</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>10</td></tr>
+<tr><td><code>ld</code></td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>00</td></tr>
+<tr><td><code>sd</code></td><td>1</td><td>X</td><td>0</td><td>0</td><td>1</td><td>0</td><td>00</td></tr>
+<tr><td><code>beq</code></td><td>0</td><td>X</td><td>0</td><td>0</td><td>0</td><td>1</td><td>01</td></tr>
+<tr><td><code>addi</code> (I-type ALU)</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>10 (funct3 decides)</td></tr>
+</table>
+<p>How to derive any row without memorising:</p>
+<ul>
+<li><strong>ALUSrc</strong> = 1 whenever the ALU's second input is an immediate (<code>ld</code>, <code>sd</code>, <code>addi</code>); 0 when it's a register (R-type, <code>beq</code>)</li>
+<li><strong>RegWrite</strong> = 1 only if the instruction produces a value in <code>rd</code> (R-type, <code>ld</code>, <code>addi</code>); <code>sd</code>/<code>beq</code> have no <code>rd</code> → 0</li>
+<li><strong>MemtoReg</strong> = 1 only for <code>ld</code> (the written value comes from memory). X (don't care) when RegWrite=0</li>
+<li><strong>MemRead</strong> = 1 only for <code>ld</code>; <strong>MemWrite</strong> = 1 only for <code>sd</code></li>
+<li><strong>Branch</strong> = 1 only for <code>beq</code>/<code>bne</code></li>
+<li><strong>ALUOp</strong>: 00 = add (address calc for <code>ld</code>/<code>sd</code>), 01 = subtract (compare for <code>beq</code>), 10 = look at funct3/funct7 (R-type / I-type ALU)</li>
+<li><code>bne</code> row = <code>beq</code> row; the datapath differs (Zero inverted), not the signals</li>
+</ul>
+<p><strong>Worked:</strong> <code>bne x3, x4, Else</code> → RegWrite=0 (no rd), MemRead=0, MemWrite=0 (no memory), ALUSrc=0 (compares two registers), Branch=1, MemtoReg=X (nothing is written). Say <em>why</em> for each — that is where the marks are.</p>
+<hr>
+<h2>How to build any datapath (the method, not the figure)</h2>
+<p>Never start from the full figure.</p>
+<p>1. Read the instruction.</p>
+<p>2. Ask: <em>where do I read? where do I write?</em></p>
+<p>3. Pick only the components that answer those two questions.</p>
+<p>4. Connect them left → right, one wire at a time, asking "what happens next?".</p>
+<p>5. For a code snippet, take the <strong>union</strong> of the datapaths of every instruction type present.</p>
+<p><strong>Exam pattern:</strong> "<code>add</code>, <code>sub</code>, <code>addi</code> — design a datapath" = R-type + I-type only (ALUSrc MUX, no Data Mem, no branch adder). "<code>add</code>, <code>addi</code>, <code>sd</code>, <code>beq</code>" = the full figure. Identify the types first, then draw only what they need.</p>
+<p><strong>Practice ladder:</strong> draw <code>ld</code>, <code>sd</code>, R-type, <code>beq</code> on one sheet each with every component labelled (64-bit data, 5-bit register numbers, 12-bit imm → 64) → then the <strong>full</strong> single-cycle datapath from a blank page, timed, target under 8 minutes → circle your misses against Fig 4.17 → draw again from blank.</p>
+<hr>
+<h2>Pipeline timing — worked example</h2>
+<p>Stage latencies <strong>IF 260 / ID 220 / EX 260 / MEM 200 / WB 220 ps</strong>.</p>
+<ul>
+<li>Single-cycle: one instruction must pass through <em>all five</em> stages inside one clock → T = 260 + 220 + 260 + 200 + 220 = <strong>1160 ps</strong></li>
+<li>Pipelined: every stage gets the same clock, so the clock must fit the <em>slowest</em> stage → T = max(260, 220, 260, 200, 220) = <strong>260 ps</strong> (add register overhead only if the question gives one)</li>
+<li>Ideal speedup = 1160 / 260 = <strong>4.46×</strong>, not 5× — stages are unbalanced, so four of them idle part of each cycle</li>
+<li>n = 5 instructions, no hazards: single-cycle 5 × 1160 = 5800 ps; pipelined (5 + 4) × 260 = 2340 ps. Each stall adds one more 260 ps cycle</li>
+<li>"Which stage to shorten?" — only cutting the <em>longest</em> stage(s) reduces the pipelined clock; shortening MEM from 200 → 150 changes nothing</li>
+</ul>
+<p><strong>Hazard conventions used in this course</strong> (match these exactly in the exam):</p>
+<ul>
+<li>Hazard check: for each instruction, take its <em>source</em> operands and look <strong>upward</strong> for a line where that register is the <strong>destination</strong>. Using a register is not a hazard; writing it is</li>
+<li>Register file writes in the <strong>first half</strong> of a cycle, reads in the <strong>second half</strong> → the consumer's ID may sit in the <strong>same cycle</strong> as the producer's WB</li>
+<li><strong>Stall-only:</strong> adjacent dependent → <strong>2 stalls</strong> (ALU and load producers alike); one independent instruction between → 1 stall; two between → 0. Mark stalls as bubbles or crosses</li>
+<li><strong>Forwarding only:</strong> ALU producer → <strong>0 stalls</strong> (EX→EX); load producer → <strong>1 stall</strong> (value exists only after MEM)</li>
+<li><strong>Stall + forward:</strong> forward first; add a stall only where forwarding cannot (load-use). It does <em>not</em> mean two stalls</li>
+<li>Total cycles = last instruction's WB cycle number. CPI = total cycles / #instructions</li>
+</ul>
+<hr>
+<h2>Worked: hazards on a 9-instruction sequence (Mock Final Q3b)</h2>
+<p>Attempt it first, then compare.</p>
+<pre>
+1  ld   x10, 32(x11)      writes x10
+2  add  x5,  x10, x7      writes x5
+3  addi x5,  x5,  3       writes x5
+4  ld   x13, 48(x5)       writes x13
+5  sd   x13, 32(x5)       writes nothing (store)
+6  add  x5,  x13, x5      writes x5
+7  sub  x6,  x12, x5      writes x6
+8  sw   x5,  12(x13)      writes nothing (store)
+9  sll  x16, x6,  x5      writes x16
+</pre>
+<p><strong>Step 1 — dependency table</strong> (for each source register look <em>upward</em> to the nearest line that <em>writes</em> it; distance = how many lines apart)</p>
+<table>
+<tr><th>Consumer</th><th>Source</th><th>Nearest producer</th><th>Distance</th><th>Producer type</th><th>Hazard in pipeline?</th></tr>
+<tr><td>2 <code>add</code></td><td>x10</td><td>1 <code>ld</code></td><td>1</td><td>load</td><td>yes</td></tr>
+<tr><td>3 <code>addi</code></td><td>x5</td><td>2 <code>add</code></td><td>1</td><td>ALU</td><td>yes</td></tr>
+<tr><td>4 <code>ld</code></td><td>x5</td><td>3 <code>addi</code></td><td>1</td><td>ALU</td><td>yes</td></tr>
+<tr><td>5 <code>sd</code></td><td>x13</td><td>4 <code>ld</code></td><td>1</td><td>load</td><td>yes</td></tr>
+<tr><td>5 <code>sd</code></td><td>x5</td><td>3 <code>addi</code></td><td>2</td><td>ALU</td><td>yes</td></tr>
+<tr><td>6 <code>add</code></td><td>x13</td><td>4 <code>ld</code></td><td>2</td><td>load</td><td>yes</td></tr>
+<tr><td>6 <code>add</code></td><td>x5</td><td>3 <code>addi</code></td><td>3</td><td>ALU</td><td><strong>no</strong> — WB of 3 and ID of 6 share a cycle (write first half, read second half)</td></tr>
+<tr><td>7 <code>sub</code></td><td>x5</td><td>6 <code>add</code></td><td>1</td><td>ALU</td><td>yes</td></tr>
+<tr><td>8 <code>sw</code></td><td>x5</td><td>6 <code>add</code></td><td>2</td><td>ALU</td><td>yes</td></tr>
+<tr><td>8 <code>sw</code></td><td>x13</td><td>4 <code>ld</code></td><td>4</td><td>load</td><td>no</td></tr>
+<tr><td>9 <code>sll</code></td><td>x6</td><td>7 <code>sub</code></td><td>2</td><td>ALU</td><td>yes</td></tr>
+<tr><td>9 <code>sll</code></td><td>x5</td><td>6 <code>add</code></td><td>3</td><td>ALU</td><td>no</td></tr>
+</table>
+<p>Rule of thumb: distance 1 or 2 → hazard; distance ≥ 3 → safe (producer WB = cycle k+4, consumer ID = cycle k+d+1; equal when d = 3).</p>
+<p><strong>i. Single-cycle:</strong> 9 instructions → <strong>9 cycles</strong>, CPI = 9/9 = <strong>1</strong>.</p>
+<p><strong>ii. Hazards in single-cycle:</strong> <strong>0</strong>. Each instruction finishes (including its register write) before the next one starts, so a later read can never see a stale value.</p>
+<p><strong>iii. Hazards in pipelined:</strong> <strong>9 RAW data hazards</strong> (the "yes" rows above), affecting 8 of the 9 instructions (every instruction except the first). State both numbers; markers check operand by operand.</p>
+<p><strong>iv. Stall-only</strong> — consumer's ID must land in the same cycle as the producer's WB → adjacent dependents get <strong>2 stalls</strong>, distance-2 gets <strong>1</strong>, distance ≥ 3 gets 0. Mark each stall as <code>x</code> (bubble) before the IF.</p>
+<table class="wide">
+<tr><th>#</th><th>Instr</th><th>stalls</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th><th>24</th></tr>
+<tr><td>1</td><td><code>ld x10,32(x11)</code></td><td>0</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2</td><td><code>add x5,x10,x7</code></td><td>2</td><td></td><td>x</td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>3</td><td><code>addi x5,x5,3</code></td><td>2</td><td></td><td></td><td></td><td></td><td>x</td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>4</td><td><code>ld x13,48(x5)</code></td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>x</td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>5</td><td><code>sd x13,32(x5)</code></td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>x</td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>6</td><td><code>add x5,x13,x5</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>7</td><td><code>sub x6,x12,x5</code></td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>x</td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td></tr>
+<tr><td>8</td><td><code>sw x5,12(x13)</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td></tr>
+<tr><td>9</td><td><code>sll x16,x6,x5</code></td><td>1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td></tr>
+</table>
+<p>Why 6 and 8 need 0 stalls: the stalls already inserted for 5 (and 7) pushed them far enough that their producer's WB has happened by their ID. Always re-check distance <em>after</em> earlier stalls, not from the original listing.</p>
+<p>Total = last WB = <strong>24 cycles</strong>. Stalls = 2+2+2+2+0+2+0+1 = 11 (check: 9 + 4 + 11 = 24). <strong>CPI = 24/9 = 2.67</strong>.</p>
+<p><strong>v. Forwarding only</strong> — ALU result forwarded EX→EX: <strong>0 stalls</strong>. Load result exists only after MEM, so a load followed <em>immediately</em> by its user still needs <strong>1 stall</strong> (load-use). Distance-2 load-use (6 ← 4) needs none.</p>
+<table class="wide">
+<tr><th>#</th><th>Instr</th><th>stalls</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th></tr>
+<tr><td>1</td><td><code>ld x10,32(x11)</code></td><td>0</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>2</td><td><code>add x5,x10,x7</code></td><td>1</td><td></td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>3</td><td><code>addi x5,x5,3</code></td><td>0</td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>4</td><td><code>ld x13,48(x5)</code></td><td>0</td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>5</td><td><code>sd x13,32(x5)</code></td><td>1</td><td></td><td></td><td></td><td></td><td></td><td>x</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>6</td><td><code>add x5,x13,x5</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td><td></td></tr>
+<tr><td>7</td><td><code>sub x6,x12,x5</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td></tr>
+<tr><td>8</td><td><code>sw x5,12(x13)</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td></tr>
+<tr><td>9</td><td><code>sll x16,x6,x5</code></td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td></tr>
+</table>
+<p>Draw forwarding arrows: 1.MEM→2.EX (load), 2.EX→3.EX, 3.EX→4.EX, 4.MEM→5.EX, 3.MEM→5.EX (x5), 4.MEM→6.EX (x13, no stall needed at distance 2), 6.EX→7.EX, 6.MEM→8.EX, 7.MEM→9.EX.</p>
+<p>Total = <strong>15 cycles</strong>, stalls = 2 (both load-use). <strong>CPI = 15/9 = 1.67</strong>.</p>
+<p><strong>vi.</strong> Summary after each method: stall-only <strong>24 cycles, CPI 2.67</strong>; forwarding <strong>15 cycles, CPI 1.67</strong>. If the question wording is ambiguous about which method it means, write both and label them.</p>
+<p>Exam layout that scores: the dependency table first (it <em>is</em> the answer to ii/iii), then each grid with the stall-count column, then one line of arithmetic per total. Pencil the grid — a wrong bubble costs more to erase in pen.</p>
+<hr>
+<h2>Why Imm Gen takes the whole instruction (Mock Final Q3a, 2 marks)</h2>
+<p>The 12 immediate bits are <strong>not in a fixed position</strong> — it depends on the format:</p>
+<table>
+<tr><th>Format</th><th>Example</th><th>Where the immediate bits are</th></tr>
+<tr><td>I-type</td><td><code>ld</code>, <code>addi</code></td><td>imm[11:0] = bits 31:20, contiguous</td></tr>
+<tr><td>S-type</td><td><code>sd</code></td><td>imm[11:5] = bits 31:25, imm[4:0] = bits 11:7 (rs2 sits in between)</td></tr>
+<tr><td>SB-type</td><td><code>beq</code></td><td>imm[12] = bit 31, imm[10:5] = 30:25, imm[4:1] = 11:8, imm[11] = bit 7</td></tr>
+</table>
+<p>So Imm Gen must read the <strong>opcode (bits 6:0)</strong> to know the format, pick the right bits, reassemble them, and <strong>sign-extend</strong> from bit 31 to 64 bits. A fixed 12-bit slice would be wrong for S and SB types → the datapath feeds <code>Instruction[31:0]</code> into Imm Gen.</p>
+<p>Two-sentence version for the paper: <em>"The immediate field is located in different bit positions for I-, S- and SB-type instructions (contiguous in 31:20 for I-type, split across 31:25 and 11:7 for S-type, scrambled for SB-type). Imm Gen must read the opcode to identify the format, select and reorder the correct bits, and sign-extend them to 64 bits — so it needs the entire instruction."</em></p>
+<hr>
+<h2>Which components each instruction needs (Practice Sheet 4 Q4)</h2>
+<p><strong>Used by every instruction:</strong> PC, PC+4 adder, Instruction Memory, and the PC-source MUX (selects PC+4 unless a branch is taken). Only list the <em>extra</em> components per row.</p>
+<table>
+<tr><th>Instr</th><th>Reg read</th><th>Imm Gen</th><th>ALU</th><th>Data Mem</th><th>Reg write</th><th>Branch adder + PC MUX</th></tr>
+<tr><td>R-type (<code>add</code>, <code>sub</code>, <code>and</code>, <code>or</code>)</td><td>rs1, rs2</td><td>—</td><td>yes (funct decides op)</td><td>—</td><td>yes (rd)</td><td>—</td></tr>
+<tr><td><code>addi</code> (I-type ALU)</td><td>rs1</td><td>yes</td><td>yes</td><td>—</td><td>yes (rd)</td><td>—</td></tr>
+<tr><td><code>ld</code></td><td>rs1</td><td>yes</td><td>yes (add — address)</td><td>read</td><td>yes (rd)</td><td>—</td></tr>
+<tr><td><code>sd</code></td><td>rs1, rs2</td><td>yes</td><td>yes (add — address)</td><td>write</td><td>—</td><td>—</td></tr>
+<tr><td><code>beq</code> / <code>bne</code></td><td>rs1, rs2</td><td>yes</td><td>yes (subtract — compare)</td><td>—</td><td>—</td><td>yes</td></tr>
+</table>
+<p>Derivation rules — do not memorise the table:</p>
+<ul>
+<li><strong>Instr Memory + PC + PC+4 adder</strong> — every instruction, always. Say this once, then stop repeating it per row</li>
+<li><strong>Reg File read port 2 (rs2)</strong> — only when rs2 is a real operand: R-type, <code>sd</code>, branches</li>
+<li><strong>Imm Gen</strong> — only when the format carries an immediate field: I, S, SB</li>
+<li><strong>ALU</strong> — every instruction: arithmetic (R / I), address calculation (<code>ld</code> / <code>sd</code>), or comparison (branches)</li>
+<li><strong>Data Memory</strong> — only <code>ld</code> (read) and <code>sd</code> (write)</li>
+<li><strong>Reg File write port</strong> — only when the instruction has an <code>rd</code>: R-type, I-type ALU, <code>ld</code>. No <code>rd</code> → no write (<code>sd</code>, branches)</li>
+<li><strong>Branch adder + PC MUX</strong> — branches only</li>
+<li>For a <strong>code snippet</strong>, take the union of the components of every instruction type present</li>
+</ul>
+<hr>
+<h2>AND gate replaced by XNOR in the branch decision (Practice Sheet 4 Q13)</h2>
+<p>The correct datapath computes <code>PCSrc = Branch AND Zero</code>. The bug makes it <code>PCSrc = XNOR(Branch, Zero)</code>, which is 1 whenever the two inputs are <strong>equal</strong>.</p>
+<table>
+<tr><th>Branch</th><th>Zero</th><th>AND (correct)</th><th>XNOR (buggy)</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td><strong>1 ← the only row that changes</strong></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+</table>
+<p><strong>i. <code>SUB x1, x2, x3</code></strong> — Branch = 0, and Zero = 1 only if x2 == x3</p>
+<ul>
+<li>x2 ≠ x3 → Zero = 0 → XNOR(0,0) = <strong>1</strong> → PC loads the branch target instead of PC+4. A non-branch instruction takes a branch</li>
+<li>The target is garbage: Imm Gen reads an SB-type immediate out of a SUB instruction's funct7/rs2 bits, so the jump lands at an arbitrary address</li>
+<li>The subtraction still completes correctly — x1 receives x2 − x3, since the RegWrite path is untouched. <strong>Only control flow breaks</strong></li>
+<li>x2 == x3 → Zero = 1 → XNOR(0,1) = 0 → PC+4, correct by luck</li>
+</ul>
+<p><strong>ii. <code>BEQ x1, x2, target</code></strong> — Branch = 1</p>
+<ul>
+<li>XNOR(1, Zero) = Zero, and AND(1, Zero) = Zero → <strong>identical</strong>. BEQ is completely unaffected and still branches exactly when x1 == x2</li>
+</ul>
+<p>One-line answer: the bug never affects branches — it corrupts the PC of <em>every non-branch instruction whose ALU result is non-zero</em> (which includes <code>ld</code>/<code>sd</code>, whose ALU output is an address).</p>
+<hr>
+<h2>Control bits for a given instruction (Practice Sheet 4 Q14–Q16)</h2>
+<table>
+<tr><th>Question</th><th>Instruction</th><th>Branch</th><th>MemWrite</th><th>RegWrite</th><th>ALUSrc</th></tr>
+<tr><td>Q14</td><td><code>Add X21, X22, X23</code></td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>Q15</td><td><code>Addi X21, X22, 12</code></td><td>0</td><td>0</td><td>1</td><td><strong>1</strong></td></tr>
+</table>
+<ul>
+<li><strong>Q14</strong> R-type: not a branch, no memory write, writes <code>rd</code> = x21, second ALU operand is register x23 → ALUSrc 0</li>
+<li><strong>Q15</strong> Only ALUSrc changes — the second ALU operand is now the immediate 12. Everything else is identical to Q14</li>
+<li><strong>Q16</strong> asks the same for <code>Add X21, X22, X23</code> but swaps in MemToReg: Branch 0 · ALUSrc 0 · RegWrite 1 · <strong>MemToReg 0</strong> (the written value comes from the ALU, not from memory)</li>
+</ul>
+<hr>
+<h2>Stuck-at faults (Assignment 4 Q3 pattern)</h2>
+<p>Method: for each instruction type, read the correct control row above, then ask whether the stuck value <em>happens to equal</em> the correct value.</p>
+<ul>
+<li><strong><code>ALUSrc</code> stuck at 1</strong> (ALU input B is always the immediate): <code>ld</code>, <code>sd</code>, <code>addi</code> need 1 anyway → <strong>still correct</strong>. R-type and <code>beq</code> need 0 → the ALU adds/compares against a garbage immediate → <strong>fail</strong>.</li>
+<li><strong><code>MemtoReg</code> stuck at 0</strong> (register write data always comes from the ALU): R-type and <code>addi</code> need 0 → <strong>still correct</strong>. <code>ld</code> needs 1 → rd receives the <em>address</em> instead of the loaded value → <strong>fail</strong>. <code>sd</code>/<code>beq</code> don't write a register (X) → <strong>unaffected</strong>.</li>
+<li>Combine: an instruction survives only if it survives <em>every</em> stuck signal. Here only <code>addi</code> survives both.</li>
+</ul>
+<hr>
+<h2>Ch2 — branch translation patterns</h2>
+<p>P&amp;H register convention: <code>f</code>=x19, <code>g</code>=x20, <code>h</code>=x21, <code>i</code>=x22, <code>j</code>=x23, <code>k</code>=x24, <code>save[]</code> base = x25.</p>
+<p><strong><code>if (i == j) f = g + h;</code></strong></p>
+<ul>
+<li><code>bne x22, x23, Exit</code> — branch on the <em>opposite</em> condition to skip the body</li>
+<li><code>add x19, x20, x21</code></li>
+<li><code>Exit:</code></li>
+</ul>
+<p><strong><code>if (i == j) f = g + h; else f = g - h;</code></strong></p>
+<ul>
+<li><code>bne x22, x23, Else</code></li>
+<li><code>add x19, x20, x21</code></li>
+<li><code>beq x0, x0, Exit</code> — unconditional jump idiom, since x0 always equals x0</li>
+<li><code>Else:</code></li>
+<li><code>sub x19, x20, x21</code></li>
+<li><code>Exit:</code></li>
+</ul>
+<p><strong><code>while (save[i] == k) i += 1;</code></strong></p>
+<ul>
+<li><code>Loop: slli x10, x22, 3</code> — i × 8, because doublewords are 8 bytes</li>
+<li><code>add x10, x10, x25</code> — address of <code>save[i]</code></li>
+<li><code>ld x9, 0(x10)</code></li>
+<li><code>bne x9, x24, Exit</code> — leave the loop as soon as the test fails</li>
+<li><code>addi x22, x22, 1</code></li>
+<li><code>beq x0, x0, Loop</code></li>
+<li><code>Exit:</code></li>
+</ul>
+<p>Three rules generate all of the above:</p>
+<ul>
+<li><strong>Invert the C condition</strong> to branch <em>past</em> the body (<code>==</code> → <code>bne</code>, <code>&lt;</code> → <code>bge</code>)</li>
+<li><code>beq x0, x0, L</code> = unconditional branch (<code>jal x0, L</code> is also accepted)</li>
+<li><strong>Index → byte offset:</strong> shift left 3 for doublewords (<code>ld</code>/<code>sd</code>), left 2 for words (<code>lw</code>/<code>sw</code>)</li>
+</ul>
+<hr>
+<h2>Ch2 — the 5 instruction formats (write this once from memory)</h2>
+<p>Bits run 31 (left) → 0 (right). Opcode is always bits 6:0; rd 11:7; funct3 14:12; rs1 19:15; rs2 24:20.</p>
+<table>
+<tr><th>Format</th><th>31:25</th><th>24:20</th><th>19:15</th><th>14:12</th><th>11:7</th><th>6:0</th><th>Used by</th></tr>
+<tr><td><strong>R</strong></td><td>funct7</td><td>rs2</td><td>rs1</td><td>funct3</td><td>rd</td><td>opcode <code>0110011</code></td><td><code>add sub and or sll</code></td></tr>
+<tr><td><strong>I</strong></td><td>imm[11:0] (all of 31:20)</td><td></td><td>rs1</td><td>funct3</td><td>rd</td><td><code>0000011</code> loads · <code>0010011</code> ALU-imm</td><td><code>ld lw addi slli srli ori</code></td></tr>
+<tr><td><strong>S</strong></td><td>imm[11:5]</td><td>rs2</td><td>rs1</td><td>funct3</td><td>imm[4:0]</td><td><code>0100011</code></td><td><code>sd sw sh sb</code></td></tr>
+<tr><td><strong>SB</strong></td><td>imm[12] imm[10:5]</td><td>rs2</td><td>rs1</td><td>funct3</td><td>imm[4:1] imm[11]</td><td><code>1100011</code></td><td><code>beq bne blt bge</code></td></tr>
+<tr><td><strong>UJ</strong></td><td>imm[20] imm[10:1] imm[11] imm[19:12] (all of 31:12)</td><td></td><td></td><td></td><td>rd</td><td><code>1101111</code></td><td><code>jal</code></td></tr>
+</table>
+<ul>
+<li><code>slli</code>/<code>srli</code> (RV64): bits 31:26 = funct6 <code>000000</code>, bits 25:20 = 6-bit shamt; funct3 001 = slli, 101 = srli. If the exam paper prints its own opcode table, use that one</li>
+<li>SB immediate is in <strong>bytes</strong>, always even, so bit 0 is implied and not stored → 13-bit range ±4 KB. Offset = (target address − branch address)</li>
+<li>Sign-extension: bit 31 is always the sign bit of the immediate in I / S / SB / UJ</li>
+</ul>
+<p><strong>Decode recipe (<code>0x00CB1A93</code>)</strong></p>
+<pre>
+hex   0    0    C    B    1    A    9    3
+bin   0000 0000 1100 1011 0001 1010 1001 0011
+bits  31                                     0
+
+opcode  [6:0]   = 0010011  -&gt; I-type ALU-immediate
+rd      [11:7]  = 10101    = x21
+funct3  [14:12] = 001      -&gt; SLLI
+rs1     [19:15] = 10110    = x22
+imm     [31:20] = 000000001100 = 12   (shamt = 12, funct6 = 000000)
+
+answer: slli x21, x22, 12      (x21 = x22 &lt;&lt; 12  = x22 * 4096)
+</pre>
+<p>Verify any decode at <a href="https://luplab.gitlab.io/rvcodecjs/">https://luplab.gitlab.io/rvcodecjs/</a> — but only <em>after</em> doing it by hand.</p>
+<p>Datapath for that instruction: I-type ALU path — PC → Instr Mem → rs1 to Read reg 1; Instr[31:0] → Imm Gen → MUX(ALUSrc=1) → ALU; ALU result → MUX(MemtoReg=0) → Write data; rd = x21, RegWrite=1, MemRead=0, MemWrite=0, Branch=0, ALUOp=10 (ALU control reads funct3 → shift left). No Data Memory, no branch adder needed.</p>
+<p><strong>Encode recipe (Practice Sheet 2 Q9 SB-type, Q10 LUI+ADDI)</strong></p>
+<ul>
+<li>SB: offset = target − PC of the branch (bytes). Write it as a 13-bit two's-complement number, drop bit 0, then scatter: bit12 → 31, bits10:5 → 30:25, bits4:1 → 11:8, bit11 → 7. Example <code>beq x9, x24, +16</code>: imm = 0000000010000 → [31]=0, [30:25]=000000, [11:8]=1000, [7]=0</li>
+<li>32-bit constant in one register: <code>lui rd, upper20</code> then <code>addi rd, rd, lower12</code>. If lower12 ≥ 0x800 (negative as 12-bit) add 1 to upper20 first. Example 0x003D0500: <code>lui x19, 0x003D</code> ; <code>addi x19, x19, 0x500</code></li>
+</ul>
+<hr>
+<h2>Ch2 — register trace with x1 = 0x00001232, x2 = 1024 (Mock Final Q2a pattern)</h2>
+<pre>
+x1 = 0x1232 = 0001 0010 0011 0010 (binary) = 4658 (decimal)
+x2 = 1024   = 0x400 = 0000 0100 0000 0000
+</pre>
+<table>
+<tr><th>Operation</th><th>Result (hex)</th><th>Result (decimal)</th><th>How</th></tr>
+<tr><td><code>slli x3, x1, 2</code></td><td>0x48C8</td><td>18632</td><td>shift left = ×4</td></tr>
+<tr><td><code>srli x3, x1, 2</code></td><td>0x48C</td><td>1164</td><td>shift right = ÷4, floor</td></tr>
+<tr><td><code>and x3, x1, x2</code></td><td>0x0</td><td>0</td><td>0x1232 has bit 10 clear</td></tr>
+<tr><td><code>or x3, x1, x2</code></td><td>0x1632</td><td>5682</td><td>sets bit 10</td></tr>
+<tr><td><code>xor x3, x1, x2</code></td><td>0x1632</td><td>5682</td><td>same here because AND was 0</td></tr>
+<tr><td><code>add x3, x1, x2</code></td><td>0x1632</td><td>5682</td><td>4658 + 1024</td></tr>
+<tr><td><code>sub x3, x1, x2</code></td><td>0xE32</td><td>3634</td><td>4658 − 1024</td></tr>
+<tr><td><code>addi x3, x1, -100</code></td><td>0x11CE</td><td>4558</td><td>negative imm is fine</td></tr>
+<tr><td><code>andi x3, x1, 0xFF</code></td><td>0x32</td><td>50</td><td>keeps low byte</td></tr>
+</table>
+<p>Rules: shift n = ×/÷ 2ⁿ · write both operands in binary under each other for AND/OR/XOR · if the table asks for <strong>decimal</strong>, convert at the end · show every line of working.</p>
+<hr>
+<h2>Ch2 — FP Euclidean distance (Mock Final Q2c, 3 marks)</h2>
+<p><code>a2, a1, b2, b1</code> are 4-byte floats at x23+0, +4, +8, +12. Result to f15, then to memory at x14.</p>
+<pre>
+flw   f1, 0(x23)        # a2
+flw   f2, 4(x23)        # a1
+flw   f3, 8(x23)        # b2
+flw   f4, 12(x23)       # b1
+fsub.s f5, f1, f2       # a2 - a1
+fsub.s f6, f3, f4       # b2 - b1
+fmul.s f5, f5, f5       # (a2 - a1)^2
+fmul.s f6, f6, f6       # (b2 - b1)^2
+fadd.s f15, f5, f6      # sum
+fsqrt.s f15, f15        # D = sqrt(sum)
+fsw   f15, 0(x14)       # store D
+</pre>
+<p>Marks come from: <code>flw</code>/<code>fsw</code> (not <code>lw</code>), 4-byte offsets, <code>.s</code> suffix, <code>fsqrt.s</code>, final store. Comment every line.</p>
+<hr>
+<h2>Ch2 — offset in base + displacement addressing (Mock Final Q2d, 2 marks)</h2>
+<ul>
+<li>Address = <strong>base register + 12-bit signed offset</strong>, e.g. <code>ld x5, 16(x10)</code> reads from x10 + 16</li>
+<li><strong>Role:</strong> the offset selects a specific element/field relative to a base — the 3rd doubleword of an array is <code>16(x10)</code>, a struct field at byte 24 is <code>24(x10)</code> — without changing the base register</li>
+<li><strong>Benefits:</strong> one base register serves a whole array/struct (fewer registers, no extra <code>add</code> to compute each address); the constant is inside the instruction so no extra memory access; ±2 KB reach is enough for most locals/fields; makes loops simple (bump the base, keep the offsets)</li>
+</ul>
+<hr>
+<h2>Ch5 — cache (Mock Final Q4, 6–7 marks)</h2>
+<p><strong>a. Offset field (1):</strong> picks the <strong>byte (or word) inside the block</strong>. Block size 8 B → 3 offset bits. Address 328 = …001 000 → offset 000 = first byte of its block; address 331 → offset 011 = 4th byte of the same block, same cache line, a hit if 328 was fetched.</p>
+<p><strong>b. Why a memory hierarchy (2):</strong> fast memory (SRAM) is expensive and small; large memory (DRAM/disk) is slow and cheap. Programs show <strong>temporal locality</strong> (reuse recent data — loop variables) and <strong>spatial locality</strong> (use neighbours — arrays, sequential code), so a small fast cache holding the recently used blocks serves most accesses at cache speed while capacity comes from the cheap levels below → the illusion of a large <em>and</em> fast memory at low cost.</p>
+<p><strong>c. Address 328, block 8 B, cache 32 B (1):</strong> #blocks = 32 / 8 = 4 → index bits = log₂ 4 = <strong>2</strong>; offset bits = log₂ 8 = <strong>3</strong>; tag = the rest.</p>
+<pre>
+328 = 1 0100 1000
+      tag  |idx|off
+      1010 | 01 | 000      tag = 10, index = 1, offset = 0
+</pre>
+<p>(If the paper says "bits" where it means bytes, state "assuming bytes" and proceed — same method for words.)</p>
+<p><strong>d. "Large cache line minimises miss penalty" (2) — FALSE.</strong> Larger blocks <em>reduce the miss rate</em> (spatial locality) up to a point, but the <strong>miss penalty grows</strong> because more bytes must be transferred from memory on every miss. Also, for a fixed cache size, fewer blocks → more conflict misses, and past a point the miss rate rises again. Example: 32 B blocks vs 128 B blocks in a 4 KB cache — the 128 B version fetches 4× the data per miss (longer penalty) and has only 32 lines instead of 128. Correct statement: large lines lower miss <em>rate</em>, not miss <em>penalty</em>.</p>
+<p><strong>e. Write-through vs write-back (1):</strong></p>
+<table>
+<tr><th></th><th>Write-through</th><th>Write-back</th></tr>
+<tr><td>On a write hit</td><td>update cache <strong>and</strong> memory immediately</td><td>update cache only, mark block <strong>dirty</strong></td></tr>
+<tr><td>Memory updated</td><td>every write</td><td>when the dirty block is evicted</td></tr>
+<tr><td>Speed</td><td>slower (memory traffic per write) — needs a <strong>write buffer</strong></td><td>faster, less traffic</td></tr>
+<tr><td>Complexity</td><td>simple, memory always consistent</td><td>dirty bit, eviction write-back, harder coherence</td></tr>
+<tr><td>Example</td><td><code>sd</code> to x[0] in a loop of 100 iterations → 100 memory writes</td><td>same loop → 1 memory write at eviction</td></tr>
+</table>
+<p><strong>Hit/miss trace — method:</strong> direct-mapped, 16 one-word blocks → index = block address mod 16. Track a 16-row table (valid, tag). Address sequence 22, 26, 22, 26, 16, 3, 16, 18:</p>
+<table>
+<tr><th>Access</th><th>Index (mod 16)</th><th>Tag (addr ÷ 16)</th><th>Result</th></tr>
+<tr><td>22</td><td>6</td><td>1</td><td>miss (cold)</td></tr>
+<tr><td>26</td><td>10</td><td>1</td><td>miss</td></tr>
+<tr><td>22</td><td>6</td><td>1</td><td><strong>hit</strong></td></tr>
+<tr><td>26</td><td>10</td><td>1</td><td><strong>hit</strong></td></tr>
+<tr><td>16</td><td>0</td><td>1</td><td>miss</td></tr>
+<tr><td>3</td><td>3</td><td>0</td><td>miss</td></tr>
+<tr><td>16</td><td>0</td><td>1</td><td><strong>hit</strong></td></tr>
+<tr><td>18</td><td>2</td><td>1</td><td>miss</td></tr>
+</table>
+<p>Hit rate 3/8. <strong>AMAT = hit time + miss rate × miss penalty</strong>, e.g. 1 + 0.625 × 100 = 63.5 cycles. If block size &gt; 1 word, first divide the address by words-per-block to get the block address, then index = block address mod #blocks.</p>
+<hr>
+<h2>Self-check — can you do each of these from a blank page, closed-book?</h2>
+<p>Tick only when you have actually done it, not when you understand it. <code>python tracker.py done N</code> updates this file.</p>
+<ul>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: draw the full single-cycle datapath with control (R-type, <code>ld</code>, <code>sd</code>, <code>beq</code>) in under 8 minutes, every bit range labelled</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: draw the datapath for a 3-instruction snippet containing only the components those instructions need</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: modify the BEQ datapath into BNE and explain the one change</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: write the control-signal table for R / <code>ld</code> / <code>sd</code> / <code>beq</code> / <code>addi</code> from the derivation rules, then justify each 0/1/X in one line</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: given 5 stage latencies, compute single-cycle period, pipelined period, speedup, and time for n instructions</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: build a dependency table for a 6–9 instruction sequence and count hazards</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: draw the stall-only grid and the forwarding grid, compute total cycles and CPI for both</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: explain why Imm Gen needs all 32 instruction bits</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch4: analyse a stuck-at control signal — which instructions survive, which fail, and why</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: write the 5 instruction formats with bit positions from memory</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: decode a 32-bit hex instruction to assembly by hand</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: encode an SB-type branch with a PC-relative offset; load a 32-bit constant with LUI + ADDI</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: translate an if/else and a while loop over an array to RISC-V with the correct shift for the element size</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: trace shifts / and / or / xor / add / sub on given register values in hex and decimal</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch2: write FP code with <code>flw</code> / <code>fsw</code>, <code>.s</code> arithmetic and 4-byte offsets</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch3: convert a decimal to IEEE 754 single precision and back; state bias, exponent range, and the special values</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch3: multiply two IEEE 754 numbers showing sign, exponent (E1 + E2 − bias) and normalised significand</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch3: trace the optimised multiplier for two 4-bit operands step by step</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch5: split an address into tag / index / offset for a given block size and cache size</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch5: run a hit/miss trace on a direct-mapped cache and compute hit rate and AMAT</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch5: argue the block-size trade-off and write-through vs write-back with one concrete example each</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Ch1: compute CPU time = IC × CPI × T and apply Amdahl's law to a proposed improvement</span></li>
+<li class="task"><span class="box">&#9744;</span> <span class="label">Do the Mock Final in one timed sitting and list every sub-question you got wrong below</span></li>
+</ul>
+<hr>
+<h2>Gap log — every sub-question you got wrong in a timed mock</h2>
+<p>Re-solve each one from blank the next day. Cross it out only when you get it right twice.</p>
+<p>1. ______________________________</p>
+<p>2. ______________________________</p>
+<p>3. ______________________________</p>
+<p>4. ______________________________</p>
+<p>5. ______________________________</p><p class='meta'>Generated from CSE340_Study_Guide.md — tick tasks with <code>python tracker.py done N</code> then rerun <code>python plan_html.py</code>.</p></body></html>
